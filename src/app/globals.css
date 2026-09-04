@@ -1,0 +1,184 @@
+@import "tailwindcss";
+
+:root {
+  --background: #0a0a0a;
+  --foreground: #ededed;
+  --gold: #f2c94c;
+  --gold-soft: #ffe08a;
+  --crimson: #e11d48;
+  --crimson-soft: #ff4d6d;
+  --violet: #7c3aed;
+  --violet-soft: #a78bfa;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-gold: var(--gold);
+  --color-gold-soft: var(--gold-soft);
+  --color-crimson: var(--crimson);
+  --color-crimson-soft: var(--crimson-soft);
+  --color-violet: var(--violet);
+  --color-violet-soft: var(--violet-soft);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-display: var(--font-bebas);
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background: var(--background);
+  color: var(--foreground);
+}
+
+/* ---------- Film grain overlay ---------- */
+.film-grain {
+  position: fixed;
+  inset: 0;
+  z-index: 60;
+  pointer-events: none;
+  opacity: 0.05;
+  mix-blend-mode: overlay;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+/* ---------- Film-strip sprocket border ---------- */
+.film-strip {
+  background-image: repeating-linear-gradient(
+    90deg,
+    #000 0 18px,
+    transparent 18px 36px
+  );
+  position: relative;
+}
+.film-strip::before,
+.film-strip::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 14px;
+  background-image: radial-gradient(
+    circle,
+    var(--background) 3.5px,
+    transparent 4px
+  );
+  background-size: 28px 14px;
+  background-position: 10px center;
+}
+.film-strip::before {
+  top: 0;
+}
+.film-strip::after {
+  bottom: 0;
+}
+
+/* ---------- Ticket cut-out shape ---------- */
+.ticket-notch {
+  position: relative;
+}
+.ticket-notch::before,
+.ticket-notch::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  width: 24px;
+  height: 24px;
+  background: var(--background);
+  border-radius: 9999px;
+  transform: translateY(-50%);
+  z-index: 10;
+}
+.ticket-notch::before {
+  left: -12px;
+}
+.ticket-notch::after {
+  right: -12px;
+}
+
+/* ---------- Animations ---------- */
+@keyframes marquee-scroll {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.animate-marquee {
+  animation: marquee-scroll 22s linear infinite;
+}
+
+@keyframes float-slow {
+  0%,
+  100% {
+    transform: translateY(0) rotate(var(--rot, 0deg));
+  }
+  50% {
+    transform: translateY(-18px) rotate(var(--rot, 0deg));
+  }
+}
+.animate-float {
+  animation: float-slow 6s ease-in-out infinite;
+}
+
+@keyframes spotlight-sweep {
+  0%,
+  100% {
+    opacity: 0.55;
+    transform: translate(-10%, -10%) rotate(0deg);
+  }
+  50% {
+    opacity: 0.85;
+    transform: translate(10%, 5%) rotate(8deg);
+  }
+}
+.animate-spotlight {
+  animation: spotlight-sweep 10s ease-in-out infinite;
+}
+
+@keyframes glow-pulse {
+  0%,
+  100% {
+    box-shadow: 0 0 20px 0px color-mix(in srgb, var(--gold) 55%, transparent);
+  }
+  50% {
+    box-shadow: 0 0 40px 6px color-mix(in srgb, var(--gold) 70%, transparent);
+  }
+}
+.animate-glow {
+  animation: glow-pulse 2.4s ease-in-out infinite;
+}
+
+@keyframes fade-in-up {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.reveal {
+  opacity: 0;
+}
+.reveal.in-view {
+  animation: fade-in-up 0.7s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: -200% 0;
+  }
+  to {
+    background-position: 200% 0;
+  }
+}
+.animate-shimmer {
+  background-size: 200% auto;
+  animation: shimmer 3.5s linear infinite;
+}

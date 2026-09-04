@@ -1,0 +1,240 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Plan {
+  BASIC
+  PREMIUM
+}
+
+enum SubscriptionStatus {
+  PENDING
+  AUTHORIZED
+  PAUSED
+  CANCELLED
+}
+
+enum MemberRole {
+  MEMBER
+  ADMIN
+  FUNCIONARIO
+}
+
+enum SignupSource {
+  PUBLIC
+  STAFF
+}
+
+enum PointsTransactionType {
+  SUBSCRIPTION_MONTHLY
+  SUBSCRIPTION_BONUS
+  INVOICE
+  REDEMPTION
+  ADJUSTMENT
+}
+
+enum InvoiceStatus {
+  PENDING
+  APPROVED
+  REJECTED
+}
+
+enum RedemptionStatus {
+  PENDING
+  FULFILLED
+  CANCELLED
+}
+
+enum VoucherStatus {
+  AVAILABLE
+  ASSIGNED
+}
+
+model Member {
+  id                 String             @id @default(cuid())
+  name               String
+  email              String             @unique
+  phone              String
+  cpf                String             @unique
+  passwordHash       String
+  role               MemberRole         @default(MEMBER)
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  plan               Plan
+  amountCents        Int
+  subscriptionStatus SubscriptionStatus @default(PENDING)
+  mpPreapprovalId    String?            @unique
+
+  pointsTransactions   PointsTransaction[]
+  invoiceSubmissions   InvoiceSubmission[]
+  redemptions          Redemption[]
+  passwordResetTokens  PasswordResetToken[]
+  launchPrizeClaims    LaunchPrizeClaim[]
+
+  @@index([subscriptionStatus])
+}
+
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  memberId  String
+  member    Member    @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([memberId])
+}
+
+model PointsTransaction {
+  id          String                @id @default(cuid())
+  memberId    String
+  member      Member                @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  type        PointsTransactionType
+  points      Int
+  description String?
+  sourceId    String?               @unique
+  createdAt   DateTime              @default(now())
+
+  @@index([memberId])
+}
+
+model InvoiceSubmission {
+  id               String        @id @default(cuid())
+  memberId         String
+  member           Member        @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  code             String
+  amountCents      Int
+  status           InvoiceStatus @default(PENDING)
+  pointsAwarded    Int?
+  rejectionReason  String?
+  reviewedAt       DateTime?
+  createdAt        DateTime      @default(now())
+
+  @@unique([code])
+  @@index([memberId])
+  @@index([status])
+}
+
+model StoreItem {
+  id          String       @id @default(cuid())
+  name        String
+  description String
+  imageUrl    String?
+  pointsCost  Int
+  active      Boolean      @default(true)
+  stock       Int?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  redemptions Redemption[]
+  vouchers    Voucher[]
+
+  @@index([active])
+}
+
+model Redemption {
+  id               String           @id @default(cuid())
+  memberId         String
+  member           Member           @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  storeItemId      String
+  storeItem        StoreItem        @relation(fields: [storeItemId], references: [id], onDelete: Restrict)
+  pointsSpent      Int
+  status           RedemptionStatus @default(PENDING)
+  fulfillmentNote  String?
+  createdAt        DateTime         @default(now())
+  fulfilledAt      DateTime?
+
+  voucher          Voucher?
+
+  @@index([memberId])
+  @@index([status])
+}
+
+model Voucher {
+  id          String        @id @default(cuid())
+  storeItemId String
+  storeItem   StoreItem     @relation(fields: [storeItemId], references: [id], onDelete: Cascade)
+  code        String        @unique
+  status      VoucherStatus @default(AVAILABLE)
+  expiresAt   DateTime?
+  redemptionId String?      @unique
+  redemption  Redemption?   @relation(fields: [redemptionId], references: [id], onDelete: SetNull)
+  createdAt   DateTime      @default(now())
+
+  @@index([storeItemId, status])
+}
+
+model Launch {
+  id               String   @id @default(cuid())
+  title            String
+  synopsis         String
+  director         String?
+  releaseLabel     String
+  bannerUrl        String?
+  active           Boolean  @default(true)
+  prizeDescription String?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  claims LaunchPrizeClaim[]
+
+  @@index([active])
+}
+
+model LaunchPrizeClaim {
+  id              String        @id @default(cuid())
+  launchId        String
+  launch          Launch        @relation(fields: [launchId], references: [id], onDelete: Cascade)
+  memberId        String
+  member          Member        @relation(fields: [memberId], references: [id], onDelete: Cascade)
+  cpf             String
+  invoiceCode     String
+  status          InvoiceStatus @default(PENDING)
+  fulfillmentNote String?
+  rejectionReason String?
+  reviewedAt      DateTime?
+  createdAt       DateTime      @default(now())
+
+  @@unique([launchId, cpf])
+  @@unique([invoiceCode])
+  @@index([launchId, status])
+  @@index([memberId])
+}
+
+model Signup {
+  id           String       @id @default(cuid())
+  name         String
+  age          Int
+  phone        String
+  email        String
+  cpf          String       @unique
+  neighborhood String
+  city         String
+  addressLine  String
+  source       SignupSource @default(PUBLIC)
+  createdAt    DateTime     @default(now())
+  updatedAt    DateTime     @updatedAt
+
+  @@index([city])
+  @@index([createdAt])
+}
+
+model AppSettings {
+  id                      String   @id @default("singleton")
+  pointsPerReal           Float    @default(1)
+  maxMonthlyInvoicePoints Int      @default(100)
+  pickupAddress           String?
+  pickupHours             String?
+  pickupMapUrl            String?
+  updatedAt               DateTime @updatedAt
+}
